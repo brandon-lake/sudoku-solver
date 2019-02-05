@@ -13,7 +13,7 @@ import javafx.scene.control.TextField;
  */
 public class Patterns {
 
-    public boolean one_note(int notes[][][], int value[][], TextField board[][], Label board2[][]) {
+    public boolean oneNote(int notes[][][], int value[][], TextField board[][], Label board2[][]) {
         int counter = 0;
         int row = 0;
         int column = 0;
@@ -34,7 +34,7 @@ public class Patterns {
                     board[i][j].setText(number + "");
                     value[i][j] = number;
                     //notes[i][j][number - 1] = 0;
-                    clear_rcb(notes, board2, i, j, number, value);
+                    clearRCB(notes, board2, i, j, number, value);
                     return true;
                 }
             }
@@ -43,7 +43,7 @@ public class Patterns {
     }
 
     // clear row column box notes
-    public void clear_rcb(int notes[][][], Label board2[][], int row, int column, int number, int value[][]) {
+    public void clearRCB(int notes[][][], Label board2[][], int row, int column, int number, int value[][]) {
         String note;
         // row note
         for (int i = 0; i < 9; i++) {
@@ -74,19 +74,19 @@ public class Patterns {
         }
 
         // box note
-        int y_shift = (row / 3) * 3;
-        int x_shift = (column / 3) * 3;
+        int yShift = (row / 3) * 3;
+        int xShift = (column / 3) * 3;
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 3; j++) {
-                notes[i + y_shift][j + x_shift][number - 1] = 0;
-                if (value[i + y_shift][j + x_shift] == 0) {
+                notes[i + yShift][j + xShift][number - 1] = 0;
+                if (value[i + yShift][j + xShift] == 0) {
                     note = "";
                     for (int n = 1; n <= 9; n++) {
-                        if (notes[i + y_shift][j + x_shift][n - 1] != 0) {
+                        if (notes[i + yShift][j + xShift][n - 1] != 0) {
                             note += n + " ";
                         }
                     }
-                    board2[i + y_shift][j + x_shift].setText(note.trim());
+                    board2[i + yShift][j + xShift].setText(note.trim());
                 }
             }
         }

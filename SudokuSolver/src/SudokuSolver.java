@@ -1,4 +1,5 @@
 
+import java.util.Arrays;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.event.ActionEvent;
@@ -28,11 +29,11 @@ public class SudokuSolver extends Application {
      * @param stage The main stage
      * @throws Exception
      */
-    private TextField[][] board = new TextField[9][9];
-    private Label[][] board2 = new Label[9][9];
-    private int[][] value = new int[9][9];
-    private int[][][] notes = new int[9][9][9];
-    private Patterns solver = new Patterns();
+    private TextField[][] board = new TextField[9][9];      // board of textfields
+    private int[][] value = new int[9][9];                  // 2D array of values.  A value of 0 means an empty square
+    private Label[][] boardNotes = new Label[9][9];         // board of labels which hold the notes for each square
+    private int[][][] notes = new int[9][9][9];             // 3D array to hold the notes for each square.  A value of 0 means that number cannot occur in that square
+    private Patterns solver = new Patterns();               // patterns object to call the methods
 
     @Override
     public void start(Stage stage) throws Exception {
@@ -44,54 +45,64 @@ public class SudokuSolver extends Application {
         stage.setScene(scene);
         // TODO: Add your GUI-building code here
 
-        // 1. Create the model
-        // 2. Create the GUI components
+        // Create the GUI components
         // create board and add to root in same loop
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 board[i][j] = new TextField("");
-                board2[i][j] = new Label("");
-                root.getChildren().addAll(board2[i][j], board[i][j]);
+                boardNotes[i][j] = new Label("");
+                root.getChildren().addAll(boardNotes[i][j], board[i][j]);
 
                 board[i][j].setPrefWidth(55);
                 board[i][j].setPrefHeight(55);
                 board[i][j].setFont(new Font("Arial", 30));
 
-                board2[i][j].setPrefWidth(55);
-                board2[i][j].setPrefHeight(55);
-                board2[i][j].setFont(new Font("Arial", 15));
-                board2[i][j].setStyle("-fx-wrap-text: true; -fx-alignment:  bottom-left");
+                boardNotes[i][j].setPrefWidth(55);
+                boardNotes[i][j].setPrefHeight(55);
+                boardNotes[i][j].setFont(new Font("Arial", 15));
+                boardNotes[i][j].setStyle("-fx-wrap-text: true; -fx-alignment:  bottom-left");
             }
         }
-        Button fill_notes = new Button("Fill notes!");
-        Button input_nums = new Button("Input Numbers!");
-        Button next_step = new Button("Next step...");
-        Button full_solve = new Button("Solve!");
+        Button addNotes = new Button("Fill notes!");
+        Button inputNumbers = new Button("Input Numbers!");
+        Button nextStep = new Button("Next step...");
+        Button quickFill = new Button("Fill the board with\nnumbers for me!");
         
-        // 3. Add components to the root
-        root.getChildren().addAll(canvas, input_nums, fill_notes, next_step, full_solve);
+        Button fullSolve = new Button("Solve!");
+        Label optional = new Label("Optional buttons:");
+        Label directions = new Label("Fill in numbers, click 'Input Numbers!', then click 'Solve!'");
 
-        // 4. Configure the components (colors, fonts, size, location)
+        // Add components to the root
+        root.getChildren().addAll(canvas, inputNumbers, addNotes, nextStep, fullSolve, optional, directions, quickFill);
+
+        // Configure the components
         canvas.toBack();
         gc.setFill(Color.WHITE);
         gc.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
         gc.setStroke(Color.BLACK);
-        gc.setLineWidth(8);
-        gc.strokeLine(175, 9, 175, 517);
-        gc.strokeLine(350, 9, 350, 517);
-        gc.strokeLine(10, 175, 515, 175);
-        gc.strokeLine(10, 350, 515, 350);
+        gc.setLineWidth(7);
+        gc.strokeLine(175, 9, 175, 519);
+        gc.strokeLine(350, 9, 350, 519);
+        gc.strokeLine(9, 176, 516, 176);
+        gc.strokeLine(9, 352, 516, 352);
 
-        input_nums.setPrefWidth(525);
-        input_nums.setFont(new Font("Times New Roman", 30));
-        input_nums.relocate(0, 535);
+        inputNumbers.setPrefWidth(525);
+        inputNumbers.setFont(new Font("Times New Roman", 30));
+        inputNumbers.relocate(0, 530);
 
-        fill_notes.relocate(0, 650);
-        
-        next_step.relocate(200, 650);
-        
-        full_solve.relocate(400, 650);
+        directions.setPrefWidth(525);
+        directions.setFont(new Font("Times New Roman", 20));
+        directions.setStyle("-fx-background-color: palegoldenrod; -fx-alignment: center");
+        directions.relocate(0, 590);
+        optional.relocate(10, 620);
+        addNotes.relocate(10, 640);
+        nextStep.relocate(10, 670);
+        quickFill.relocate(130, 640);
+        fullSolve.relocate(280, 630);
+        fullSolve.setPrefWidth(200);
+        fullSolve.setPrefHeight(50);
+        fullSolve.setFont(new Font("Times New Roman", 30));
 
         // set location of all squares
         int x;
@@ -100,7 +111,7 @@ public class SudokuSolver extends Application {
             x = 5;
             for (int j = 0; j < 9; j++) {
                 board[i][j].relocate(x, y);
-                board2[i][j].relocate(x, y);
+                boardNotes[i][j].relocate(x, y);
                 x += 55;
                 if ((j + 1) % 3 == 0) {
                     x += 10;
@@ -108,33 +119,37 @@ public class SudokuSolver extends Application {
             }
             y += 55;
             if ((i + 1) % 3 == 0) {
-                y += 10;
+                y += 11;
             }
         }
-        // 5. Add Event Handlers and do final setup
 
-        input_nums.setOnAction(this::get_values);
-        fill_notes.setOnAction(this::notes);
-        next_step.setOnAction(this::one_step);
-        full_solve.setOnAction(this::solve_puzzle);
-        
-        // 6. Show the stage
+        // Add Event Handlers and do final setup
+        inputNumbers.setOnAction(this::inputValues);
+        addNotes.setOnAction(this::notes);
+        nextStep.setOnAction(this::oneStep);
+        quickFill.setOnAction(this::fillBoard);
+        fullSolve.setOnAction(this::solvePuzzle);
+
+        inputNumbers.requestFocus();
+
         stage.show();
     }
-    
-    // check solution - dont move forwards unless solvable
-    // hide input button, show new buttons (full solve or go step by step)
-    // create new 2d array values2, solve again step by step if needed
 
-    // eventually get values + notes will be the same button
-    private void get_values(ActionEvent ae) {
+    /**
+     * Submits the numbers in the textboxes to memory, fills the 2D array of values so that solving can begin
+     * 
+     * @param ae 
+     */
+    private void inputValues(ActionEvent ae) {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 // trims all but the first character
                 if (board[i][j].getLength() > 1) {
-                    board[i][j].setText(board[i][j].getText(0, 1));
+                    int length = board[0][0].getLength();
+                    System.out.println(length);
+                    board[i][j].setText(board[i][j].getText(length - 1, length));
                 }
-                board2[i][j].toFront();
+                boardNotes[i][j].toFront();
                 try {
                     value[i][j] = Integer.parseInt(board[i][j].getText());
                     board[i][j].setStyle("-fx-background-color: lightgray");
@@ -147,12 +162,17 @@ public class SudokuSolver extends Application {
         }
     }
 
+    /**
+     * Fill in all Sudoku notes based on possible solutions for each square
+     * 
+     * @param ae 
+     */
     private void notes(ActionEvent ae) {
         // 1-9 notes for all empty boxes
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (value[i][j] == 0) {
-                    for(int k = 0; k < 9; k++) {
+                    for (int k = 0; k < 9; k++) {
                         notes[i][j][k] = k + 1;
                     }
                 }
@@ -163,7 +183,7 @@ public class SudokuSolver extends Application {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (value[i][j] != 0) {
-                    solver.clear_rcb(notes, board2, i, j, value[i][j], value);
+                    solver.clearRCB(notes, boardNotes, i, j, value[i][j], value);
                 }
             }
         }
@@ -178,24 +198,70 @@ public class SudokuSolver extends Application {
                             note += n + " ";
                         }
                     }
-                    board2[i][j].setText(note.trim());
+                    boardNotes[i][j].setText(note.trim());
                 }
             }
         }
     }
 
-    private void one_step(ActionEvent ae) {
-        if(solver.one_note(notes, value, board, board2)) {
-            return;
+    /**
+     * Check all methods in the patterns class for the next step in solving the
+     * puzzle
+     *
+     * @param ae
+     * @return true if a move was able to be made, false if no possible moves
+     */
+    private boolean oneStep(ActionEvent ae) {
+        if (solver.oneNote(notes, value, board, boardNotes)) {
+            return true;
         }
-        System.out.println("Couldn't solve anything");
+
+        //System.out.println("Couldn't solve anything");
+        return false;
     }
 
-    private void solve_puzzle(ActionEvent ae) {
-        boolean solved = false;
-        // will add functionality later
+    /**
+     * Fills the board with a stock Sudoku puzzle, to save the user time when testing
+     * 
+     * @param ae 
+     */
+    private void fillBoard(ActionEvent ae) {
+        int[] numbers = {4, 3, 5, 5, 2, 6, 9, 4, 7, 1, 2, 4, 3, 5, 3, 7, 4, 5, 6, 7, 8, 6, 5, 8, 1, 3, 6, 6, 5, 9, 4, 1, 8, 8, 7, 9};
+        int[] places = {1, 2, 5, 11, 12, 14, 15, 16, 18, 19, 22, 24, 25, 28, 30, 31, 39, 40, 42, 43, 51, 52, 54, 57, 58, 60, 63, 64, 66, 67, 68, 70, 71, 77, 80, 81};
+        int counter = 0;
+        
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (((i * 9) + (j + 1)) == places[counter]) {
+                    board[i][j].setText(numbers[counter++] + "");
+                }
+            }
+        }
+        inputValues(ae);
     }
-    
+
+    /**
+     * Solves the puzzle in one click, rather than step by step
+     * 
+     * @param ae
+     * @return True if solved, false if cannot solve
+     */
+    private boolean solvePuzzle(ActionEvent ae) {
+        notes(ae);
+        while (oneStep(ae)) {
+        }
+
+        for (int i = 0; i < 9; i++) {
+            for (int j = 0; j < 9; j++) {
+                if (value[i][j] == 0) {
+                    System.out.println("Couldn't solve the puzzle");
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /**
      * Make no changes here.
      *

@@ -1,5 +1,4 @@
 
-import java.util.Arrays;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.event.ActionEvent;
@@ -20,15 +19,6 @@ import javafx.stage.Stage;
  */
 public class SudokuSolver extends Application {
 
-    // TODO: Instance Variables for View Components and Model
-    // TODO: Private Event Handlers and Helper Methods
-    /**
-     * This is where you create your components and the model and add event
-     * handlers.
-     *
-     * @param stage The main stage
-     * @throws Exception
-     */
     private TextField[][] board = new TextField[9][9];      // board of textfields
     private int[][] value = new int[9][9];                  // 2D array of values.  A value of 0 means an empty square
     private Label[][] boardNotes = new Label[9][9];         // board of labels which hold the notes for each square
@@ -43,7 +33,6 @@ public class SudokuSolver extends Application {
         Scene scene = new Scene(root, 525, 700); // set the size here
         stage.setTitle("Sudoku Solver!"); // set the window title here
         stage.setScene(scene);
-        // TODO: Add your GUI-building code here
 
         // Create the GUI components
         // create board and add to root in same loop
@@ -113,11 +102,13 @@ public class SudokuSolver extends Application {
                 board[i][j].relocate(x, y);
                 boardNotes[i][j].relocate(x, y);
                 x += 55;
+                // add a space between each 3
                 if ((j + 1) % 3 == 0) {
                     x += 10;
                 }
             }
             y += 55;
+            // add a space between each 3
             if ((i + 1) % 3 == 0) {
                 y += 11;
             }
@@ -145,21 +136,21 @@ public class SudokuSolver extends Application {
             for (int j = 0; j < 9; j++) {
                 // trims all but the first character
                 if (board[i][j].getLength() > 1) {
-                    int length = board[0][0].getLength();
-                    System.out.println(length);
-                    board[i][j].setText(board[i][j].getText(length - 1, length));
+                    board[i][j].setText(board[i][j].getText(0, 1));
                 }
+                
+                // set the squares as readonly once numbers have been submitted, by bringing the labels to the front
                 boardNotes[i][j].toFront();
                 try {
                     value[i][j] = Integer.parseInt(board[i][j].getText());
                     board[i][j].setStyle("-fx-background-color: lightgray");
-                    //board2[i][j].setStyle("-fx-opacity: 0");
                 } catch (NumberFormatException e) {
                     board[i][j].setText("");
                     value[i][j] = 0;
                 }
             }
         }
+        notes(ae);
     }
 
     /**
@@ -183,7 +174,7 @@ public class SudokuSolver extends Application {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (value[i][j] != 0) {
-                    solver.clearRCB(notes, boardNotes, i, j, value[i][j], value);
+                    solver.clearRCB(notes, boardNotes, i, j, value);
                 }
             }
         }
@@ -212,12 +203,10 @@ public class SudokuSolver extends Application {
      * @return true if a move was able to be made, false if no possible moves
      */
     private boolean oneStep(ActionEvent ae) {
-        if (solver.oneNote(notes, value, board, boardNotes)) {
+        if (solver.oneNote(notes, value, board, boardNotes))
             return true;
-        }
-
-        //System.out.println("Couldn't solve anything");
-        return false;
+        // no need for if statement on last coded method
+        return solver.oneOccurrence(notes, value, board, boardNotes);
     }
 
     /**
@@ -226,17 +215,16 @@ public class SudokuSolver extends Application {
      * @param ae 
      */
     private void fillBoard(ActionEvent ae) {
-        int[] numbers = {4, 3, 5, 5, 2, 6, 9, 4, 7, 1, 2, 4, 3, 5, 3, 7, 4, 5, 6, 7, 8, 6, 5, 8, 1, 3, 6, 6, 5, 9, 4, 1, 8, 8, 7, 9};
-        int[] places = {1, 2, 5, 11, 12, 14, 15, 16, 18, 19, 22, 24, 25, 28, 30, 31, 39, 40, 42, 43, 51, 52, 54, 57, 58, 60, 63, 64, 66, 67, 68, 70, 71, 77, 80, 81};
-        int counter = 0;
+        //int[] numbers = {4, 3, 5, 5, 2, 6, 9, 4, 7, 1, 2, 4, 3, 5, 3, 7, 4, 5, 6, 7, 8, 6, 5, 8, 1, 3, 6, 6, 5, 9, 4, 1, 8, 8, 7, 9};
+        //int[] places = {1, 2, 5, 11, 12, 14, 15, 16, 18, 19, 22, 24, 25, 28, 30, 31, 39, 40, 42, 43, 51, 52, 54, 57, 58, 60, 63, 64, 66, 67, 68, 70, 71, 77, 80, 81};
         
-        for (int i = 0; i < 9; i++) {
-            for (int j = 0; j < 9; j++) {
-                if (((i * 9) + (j + 1)) == places[counter]) {
-                    board[i][j].setText(numbers[counter++] + "");
-                }
-            }
+        int[] numbers = {4, 8, 1, 6, 7, 5, 1, 5, 3, 4, 9, 8, 1, 2, 8, 9, 4, 1, 2, 5, 9, 3, 2, 8, 8, 7, 1, 2, 6, 7, 3};
+        int[] places = {2, 3, 6, 10, 12, 14, 17, 20, 22, 23, 26, 28, 29, 32, 40, 41, 42, 50, 53, 54, 56, 59, 60, 62, 65, 68, 70, 72, 76, 79, 80};
+                
+        for (int i = 0; i < places.length; i++) {
+            board[(places[i] - 1) / 9][(places[i] - 1) % 9].setText(numbers[i] + "");
         }
+        
         inputValues(ae);
     }
 
@@ -247,10 +235,10 @@ public class SudokuSolver extends Application {
      * @return True if solved, false if cannot solve
      */
     private boolean solvePuzzle(ActionEvent ae) {
-        notes(ae);
         while (oneStep(ae)) {
         }
 
+        // IMPROVE THIS CHECK SOLVED ALGORITHM LATER
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (value[i][j] == 0) {

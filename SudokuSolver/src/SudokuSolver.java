@@ -174,7 +174,7 @@ public class SudokuSolver extends Application {
         for (int i = 0; i < 9; i++) {
             for (int j = 0; j < 9; j++) {
                 if (value[i][j] != 0) {
-                    solver.clearRCB(notes, boardNotes, i, j, value);
+                    solver.clearRCB(notes, value, boardNotes, i, j);
                 }
             }
         }
